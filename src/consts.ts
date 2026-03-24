@@ -5,10 +5,10 @@ import { getEffectiveStage, getStage, hasCurse } from "isaacscript-common";
 
 export const FLOOR_SIZE: int = 169;
 export const ROOM_TYPE_VALUE: Map<RoomType, float> = new Map([
-  [RoomType.DEFAULT, 0.0],
-  [RoomType.TREASURE, 1.0],
-  [RoomType.SHOP, 1.0],
-  [RoomType.BOSS, 1.0],
+    [RoomType.DEFAULT, 0.0],
+    [RoomType.TREASURE, 1.0],
+    [RoomType.SHOP, 1.0],
+    [RoomType.BOSS, 1.0],
 ]);
 
 /*
@@ -16,45 +16,68 @@ export const ROOM_TYPE_VALUE: Map<RoomType, float> = new Map([
  *  https://bindingofisaacrebirth.wiki.gg/wiki/Level_Generation
  */
 export function get_number_of_rooms(): int {
-  let floor_depth = getEffectiveStage();
+    let floor_depth = getEffectiveStage();
 
-  // special case for void floor
-  if (floor_depth == 12) {
-    return 1;
-  }
+    // special case for void floor
+    if (floor_depth == 12) {
+        return 1;
+    }
 
-  // special case for curse of the labyrinth
-  if (hasCurse(LevelCurse.LABYRINTH)) {
-    let room_count = Math.min(45, 1.8 * (3.33 * floor_depth + 5)) as int;
+    // special case for curse of the labyrinth
+    if (hasCurse(LevelCurse.LABYRINTH)) {
+        let room_count = Math.min(45, 1.8 * (3.33 * floor_depth + 5)) as int;
+        return room_count;
+    }
+
+    // calculate count using floor depth/stage
+    let room_count = Math.min(20, 3.33 * floor_depth + 5) as int;
+
+    // 4 more rooms are added for curse of the lost
+    if (hasCurse(LevelCurse.LOST)) {
+        room_count += 4;
+    }
+
     return room_count;
-  }
-
-  // calculate count using floor depth/stage
-  let room_count = Math.min(20, 3.33 * floor_depth + 5) as int;
-
-  // 4 more rooms are added for curse of the lost
-  if (hasCurse(LevelCurse.LOST)) {
-    room_count += 4;
-  }
-
-  return room_count;
 }
 
 export function guaranteed_special_room_count(): int {
-  let rooms = 0;
-  // pre-chapter 4 there are five special rooms (treasure, shop, 2x secrets, boss)
-  if (getStage() < LevelStage.WOMB_1) {
-    rooms = 5;
+    let rooms = 0;
+    // pre-chapter 4 there are five special rooms (treasure, shop, 2x secrets, boss)
+    if (getStage() < LevelStage.WOMB_1) {
+        rooms = 5;
 
-    // on labyrinth floors there is an extra treasure room and an extra boss room
-    if (hasCurse(LevelCurse.LABYRINTH)) {
-      rooms += 2;
+        // on labyrinth floors there is an extra treasure room and an extra boss room
+        if (hasCurse(LevelCurse.LABYRINTH)) {
+            rooms += 2;
+        }
+    } else {
+        // after that there are only three (boss, 2x secrets)
+        rooms = 3;
     }
-  } else {
-    // after that there are only three (boss, 2x secrets)
-    rooms = 3;
-  }
 
-  // TODO: eventually account for other special room types (challenges, curses, dice, etc.)
-  return rooms;
+    // TODO: eventually account for other special room types (challenges, curses, dice, etc.)
+    return rooms;
 }
+
+
+export function pretty_floor_values(values: float[]): string {
+    let s = "\n";
+
+    let i = 0;
+    for (let r = 0; r < 13; r++) {
+        for (let c = 0; c < 13; c++) {
+            let v = values[i];
+            if (v !== undefined) {
+                s = s.concat(v.toFixed(1).padStart(4, "0"));
+            } else {
+                s = s.concat("00.0");
+            }
+            s = s.concat(" ");
+            i += 1;
+        }
+        s = s.concat("\n");
+    }
+
+    return s;
+}
+
