@@ -1,3 +1,5 @@
+// SOURCED FROM https://github.com/NikPiermafrost/typescript-color-gradient
+
 function toHex(c: number): string {
     const hex = Math.round(c).toString(16);
     return hex.length === 1 ? '0' + hex : hex;

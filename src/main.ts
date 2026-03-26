@@ -1,5 +1,5 @@
 import { name } from "../package.json";
-import { Agent } from "./floor";
+import { Agent } from "./agent";
 import { addCollectible, getPlayers, initModFeatures, ModCallbackCustom } from "isaacscript-common";
 import { mod } from "./mod";
 import { CollectibleType } from "isaac-typescript-definitions";

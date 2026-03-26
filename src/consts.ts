@@ -1,7 +1,7 @@
 // need bosh rush timer and hush timer
 
-import { LevelCurse, LevelStage, RoomType } from "isaac-typescript-definitions";
-import { getEffectiveStage, getStage, hasCurse } from "isaacscript-common";
+import { LevelCurse, LevelStage, RoomType, StageID } from "isaac-typescript-definitions";
+import { getEffectiveStage, getStage, getStageID, hasCurse } from "isaacscript-common";
 
 export const FLOOR_SIZE: int = 169;
 export const ROOM_TYPE_VALUE: Map<RoomType, float> = new Map([
@@ -16,21 +16,22 @@ export const ROOM_TYPE_VALUE: Map<RoomType, float> = new Map([
  *  https://bindingofisaacrebirth.wiki.gg/wiki/Level_Generation
  */
 export function get_number_of_rooms(): int {
-    let floor_depth = getEffectiveStage();
+    let floor_depth = getStageID();
 
     // special case for void floor
-    if (floor_depth == 12) {
+    if (floor_depth == StageID.VOID) {
         return 1;
     }
 
+    // calculate count using floor depth/stage
+    let room_count = Math.round(Math.min(20, (floor_depth * 10 / 3) + 5.5));
+
     // special case for curse of the labyrinth
     if (hasCurse(LevelCurse.LABYRINTH)) {
-        let room_count = Math.min(45, 1.8 * (3.33 * floor_depth + 5)) as int;
+        room_count = Math.round(Math.min(45, 1.8 * room_count));
         return room_count;
     }
 
-    // calculate count using floor depth/stage
-    let room_count = Math.min(20, 3.33 * floor_depth + 5) as int;
 
     // 4 more rooms are added for curse of the lost
     if (hasCurse(LevelCurse.LOST)) {
@@ -56,6 +57,7 @@ export function guaranteed_special_room_count(): int {
     }
 
     // TODO: eventually account for other special room types (challenges, curses, dice, etc.)
+
     return rooms;
 }
 

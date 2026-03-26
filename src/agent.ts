@@ -2,6 +2,7 @@ import { DisplayFlag, RoomType } from "isaac-typescript-definitions";
 import {
     CallbackCustom,
     getFloorDisplayFlags,
+    getRoomData,
     getRoomDisplayFlags,
     getRoomShape,
     getRoomShapeAdjacentGridIndexes,
@@ -21,7 +22,6 @@ import {
     FLOOR_SIZE,
     get_number_of_rooms,
     guaranteed_special_room_count,
-    pretty_floor_values,
     ROOM_TYPE_VALUE,
 } from "./consts";
 import { generateGradient } from "./gradient";
@@ -89,8 +89,8 @@ export class Agent extends ModFeature {
             this.values[idx] = this.unvisited_room_value(idx);
         });
 
-        let s = pretty_floor_values(this.values)
-        log(s);
+        // let s = pretty_floor_values(this.values)
+        // log(s);
     }
 
     /// Calculates the value of an invisible (not guaranteed to exist) room
@@ -100,21 +100,35 @@ export class Agent extends ModFeature {
         // TODO: eventually expand this to cover more than three cases
         let types = [RoomType.BOSS, RoomType.TREASURE, RoomType.SHOP];
 
+        // first, we need to calculate the number of yet-to-be-discovered rooms on this floor
+        let remaining_rooms = get_number_of_rooms();
+
+        const discovered_special_rooms = getRoomsInsideGrid().filter((room_desc) => {
+            if (room_desc === undefined) return false;
+            if (!isRoomVisible(room_desc)) return false;
+            let type = getRoomType((room_desc.SafeGridIndex));
+            if (type == undefined) return false;
+            return types.includes(type);
+        }).length;
+
+        log(`Number of expected rooms for this floor: ${remaining_rooms}`);
+
+        // subtract all visible rooms that aren't special rooms
+        remaining_rooms -= getRoomsInsideGrid().filter((room_desc) => {
+            if (room_desc === undefined) {
+                return false;
+            }
+            return isRoomVisible(room_desc);
+        }).length;
+
+        // subtract the number of special rooms this floor should have, excluding the ones already discovered
+        remaining_rooms -= guaranteed_special_room_count() - discovered_special_rooms;
+
+        remaining_rooms = Math.max(0, remaining_rooms);
+        log(`Total remaining open rooms this floor: ${remaining_rooms}`);
+
+        // now we calculate values
         types.forEach((r_type) => {
-            // first, we need to calculate the number of yet-to-be-discovered rooms on this floor
-            let remaining_rooms = get_number_of_rooms();
-
-            // subtract all the visible rooms
-            remaining_rooms -= getRoomsInsideGrid().filter((room_desc) => {
-                if (room_desc === undefined) {
-                    return false;
-                }
-                return isRoomVisible(room_desc);
-            }).length;
-
-            // subtract the number of special rooms this floor should have
-            remaining_rooms -= guaranteed_special_room_count();
-
             // TODO: we need to adjust the probability if we're calculating the boss room probability, since it
             // changes based on distance from the starting room
 
@@ -154,13 +168,14 @@ export class Agent extends ModFeature {
         // remove any neighbours that are also visible (but not visited or special)
         let invisible_neighbours: int[] = [];
         potential_neighbours.forEach((idx, _) => {
-            if (
-                !(
-                    hasFlag(getRoomDisplayFlags(idx), DisplayFlag.VISIBLE)
-                    && getRoomVisitedCount(idx) === 0
-                    && getRoomType(idx) === RoomType.DEFAULT
-                )
-            ) {
+            if (getRoomData(idx) === undefined) {
+                return;
+            }
+            if (!(
+                hasFlag(getRoomDisplayFlags(idx), DisplayFlag.VISIBLE)
+                && getRoomVisitedCount(idx) === 0
+                && getRoomType(idx) === RoomType.DEFAULT
+            )) {
                 invisible_neighbours.push(idx);
             }
         });
