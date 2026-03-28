@@ -1,6 +1,6 @@
 import { name } from "../package.json";
 import { Agent } from "./agent";
-import { addCollectible, getPlayers, initModFeatures, ModCallbackCustom } from "isaacscript-common";
+import { addCollectible, initModFeatures, ModCallbackCustom } from "isaacscript-common";
 import { mod } from "./mod";
 import { CollectibleType } from "isaac-typescript-definitions";
 
@@ -12,16 +12,17 @@ export function main(): void {
     // Print a message to the "log.txt" file.
     Isaac.DebugString(`${name} initialized, ready to calculate stuff`);
     mod.AddCallbackCustom(ModCallbackCustom.POST_GAME_STARTED_REORDERED_LAST, on_run_start, false);
-    print("please");
 }
 
 function on_run_start(): void {
-    let p = getPlayers()[0];
-    if (p !== undefined) {
-        addCollectible(p, CollectibleType.BLACK_CANDLE);
-    }
-    //
-    // kill all enemies in the room
-    Isaac.ExecuteCommand("debug 10");
+    let p = Isaac.GetPlayer();
 
+    // add black candle to avoid curses, could be removed later?
+    addCollectible(p, CollectibleType.BLACK_CANDLE);
+
+
+    // automatically kill all enemies in the room
+    Isaac.ExecuteCommand("debug 10");
+    // enable godmode
+    Isaac.ExecuteCommand("debug 3");
 }

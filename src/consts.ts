@@ -1,15 +1,47 @@
 // need bosh rush timer and hush timer
 
 import { LevelCurse, LevelStage, RoomType, StageID } from "isaac-typescript-definitions";
-import { getEffectiveStage, getStage, getStageID, hasCurse } from "isaacscript-common";
+import { getStage, getStageID, hasCurse, logError } from "isaacscript-common";
+import { ITEM_QUALITY_VALUES, QUALITY_CHANCE_BY_POOL } from "./params";
 
 export const FLOOR_SIZE: int = 169;
-export const ROOM_TYPE_VALUE: Map<RoomType, float> = new Map([
-    [RoomType.DEFAULT, 0.0],
-    [RoomType.TREASURE, 1.0],
-    [RoomType.SHOP, 1.0],
-    [RoomType.BOSS, 1.0],
-]);
+export const ROOM_TYPE_VALUE: Map<RoomType, float> = calculate_room_values();
+
+// Iterate through room types and qualities to create value maps for each room
+function calculate_room_values(): Map<RoomType, float> {
+
+    let room_type_values: Map<RoomType, float> = new Map([
+        [RoomType.DEFAULT, 0.0],
+        [RoomType.TREASURE, 1.0],
+        [RoomType.SHOP, 1.0],
+        [RoomType.BOSS, 1.0],
+    ]);
+
+    for (const type of room_type_values.keys()) {
+        let value: float = 0.0;
+
+        for (const quality of ITEM_QUALITY_VALUES.keys()) {
+            let qual_val = ITEM_QUALITY_VALUES.get(quality);
+            if (qual_val === undefined) {
+                logError(`Error getting value for quality '${quality}'!`);
+                qual_val = 0.0;
+            }
+            let qual_prob = QUALITY_CHANCE_BY_POOL.get(type)?.get(quality);
+            if (qual_prob === undefined) {
+                logError(`Error getting probability for quality '${quality}'`);
+                qual_prob = 0.0;
+            }
+            value += qual_val * qual_prob;
+        }
+
+        room_type_values.set(type, value);
+    }
+
+    // logMap(room_type_values, "Room Type Values");
+
+    return room_type_values;
+}
+
 
 /*
  *  Room generation algorithm based off of:
