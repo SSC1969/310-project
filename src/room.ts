@@ -37,7 +37,7 @@ export function get_value_of_type(r_type: RoomType): float {
     switch (r_type) {
         // we only need to check if the player has a key if this isn't the first floor
         case RoomType.TREASURE:
-            if (getStage() !== LevelStage.BASEMENT_1) {
+            if (getStage() > LevelStage.BASEMENT_1) {
                 needs_key = true;
             }
             break;
@@ -73,7 +73,7 @@ export function get_value_of_type(r_type: RoomType): float {
     }
 
     // now adjust the value based on the parameters set
-    if (needs_key && Isaac.GetPlayer().GetNumKeys() === 0) {
+    if (needs_key && Isaac.GetPlayer().GetNumKeys() == 0) {
         base_val = 0;
     }
 

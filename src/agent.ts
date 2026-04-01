@@ -65,7 +65,7 @@ export class Agent extends ModFeature {
         // display a marker above the optimal door
         mod.setDoorDisplay((door) => {
             let val: number = this.utilities[door.TargetRoomIndex] || 0.0;
-            let str = val.toString();
+            let str = val.toFixed(2);
             if (door.Slot === this.target_slot) {
                 str = str.concat("\n!!!");
             }
@@ -89,9 +89,9 @@ export class Agent extends ModFeature {
         this.player_pos_marker = spawnNPC(EntityType.MAGGOT, 1, 0, Isaac.GetPlayer().Position)
         this.player_pos_marker.MaxHitPoints = 0.0;
         this.player_pos_marker.EntityCollisionClass = EntityCollisionClass.NONE;
-        this.player_pos_marker.Visible = false;
         this.player_pos_marker.AddEntityFlags(addFlag(EntityFlag.PERSISTENT, EntityFlag.FRIENDLY));
         this.player_pos_marker.Position = Isaac.GetPlayer().Position;
+        this.player_pos_marker.Visible = false;
     }
 
     @CallbackCustom(ModCallbackCustom.POST_NEW_ROOM_REORDERED)
