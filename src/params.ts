@@ -2,6 +2,9 @@ import { RoomType } from "isaac-typescript-definitions"
 
 export const BOSS_ROOM_UNCOMPLETED_ROOM_MODIFIER = 1.25;
 export const SHORTEST_POSSIBLE_TIME_PER_STAGE = 120_000;
+export const DISCOUNT_FACTOR = 0.3;
+export const CONVERGENCE_THRESHOLD = 0.01;
+export const NEXT_FLOOR_BASE_VALUE = 10.0;
 
 export const ITEM_QUALITY_VALUES = new Map([
     ["q0", 0.1],

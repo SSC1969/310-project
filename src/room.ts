@@ -1,7 +1,7 @@
 import { GameStateFlag, LevelStage, RoomType } from "isaac-typescript-definitions";
 import { getRoomDescriptorsForType, getStage, isRoomVisible, logError } from "isaacscript-common";
 import { ROOM_TYPE_VALUE } from "./consts";
-import { BOSS_ROOM_UNCOMPLETED_ROOM_MODIFIER, SHORTEST_POSSIBLE_TIME_PER_STAGE } from "./params";
+import { BOSS_ROOM_UNCOMPLETED_ROOM_MODIFIER, NEXT_FLOOR_BASE_VALUE, SHORTEST_POSSIBLE_TIME_PER_STAGE } from "./params";
 
 
 export function get_unvisited_rooms(rooms: RoomDescriptor[]): RoomDescriptor[] {
@@ -64,35 +64,9 @@ export function get_value_of_type(r_type: RoomType): float {
                 base_val *= num_items_can_purchase;
             }
             break;
-        // boss room value increases the more of the floor's essential rooms we've cleared
+        // boss room does change technically, but only when calculating utility, as the value of the
+        // next floor is assigned to the state given by the taking the action of leaving this floor
         case RoomType.BOSS:
-            for (let r_type of [RoomType.TREASURE, RoomType.SHOP]) {
-                if (getRoomDescriptorsForType(r_type).every((desc) => desc.VisitedCount > 0)) {
-                    // for each of the important types the agent has completed, we increase the value
-                    // of the boss room
-                    base_val *= BOSS_ROOM_UNCOMPLETED_ROOM_MODIFIER;
-                }
-            }
-
-            // we also tweak the value if we're trying to reach boss rush or hush
-            const time = Game().TimeCounter;
-            const stage_id = getStage();
-            let par_time_remaining = 0;
-            let stages_remaining = 0; // includes the current stage (e.g. on depths 2 it should still be 1)
-            if (stage_id < LevelStage.WOMB_1) {
-                par_time_remaining = time - Game().BossRushParTime;
-                stages_remaining = LevelStage.WOMB_1 - stage_id;
-            } else if (stage_id < LevelStage.BLUE_WOMB) {
-                par_time_remaining = time - Game().BlueWombParTime;
-                stages_remaining = LevelStage.BLUE_WOMB - stage_id;
-            }
-            const ms_per_stage = par_time_remaining / stages_remaining;
-
-            // it's still possible for the agent to reach the next time-gated challenge
-            if (ms_per_stage > SHORTEST_POSSIBLE_TIME_PER_STAGE) {
-                // boss value should increase if time is running short for reaching the challenge
-                base_val /= (ms_per_stage / SHORTEST_POSSIBLE_TIME_PER_STAGE) - 1;
-            }
             break;
         case RoomType.DEFAULT:
             break;
@@ -104,4 +78,39 @@ export function get_value_of_type(r_type: RoomType): float {
     }
 
     return base_val;
+}
+
+export function get_next_floor_value(): float {
+    let val = NEXT_FLOOR_BASE_VALUE;
+
+    for (let r_type of [RoomType.TREASURE, RoomType.SHOP]) {
+        if (getRoomDescriptorsForType(r_type).every((desc) => desc.VisitedCount > 0)) {
+            // for each of the important types the agent has completed, we increase the value
+            // of the boss room
+            val *= BOSS_ROOM_UNCOMPLETED_ROOM_MODIFIER;
+        }
+    }
+
+    // we also tweak the value if we're trying to reach boss rush or hush
+    const time = Game().TimeCounter;
+    const stage_id = getStage();
+    let par_time_remaining = 0;
+    let stages_remaining = 0; // includes the current stage (e.g. on depths 2 it should still be 1)
+    if (stage_id < LevelStage.WOMB_1) {
+        par_time_remaining = time - Game().BossRushParTime;
+        stages_remaining = LevelStage.WOMB_1 - stage_id;
+    } else if (stage_id < LevelStage.BLUE_WOMB) {
+        par_time_remaining = time - Game().BlueWombParTime;
+        stages_remaining = LevelStage.BLUE_WOMB - stage_id;
+    }
+    const ms_per_stage = par_time_remaining / stages_remaining;
+
+    // it's still possible for the agent to reach the next time-gated challenge
+    if (ms_per_stage > SHORTEST_POSSIBLE_TIME_PER_STAGE) {
+        // value should increase if time is running short for reaching the challenge
+        val /= (ms_per_stage / SHORTEST_POSSIBLE_TIME_PER_STAGE) - 1;
+    }
+
+
+    return val;
 }
